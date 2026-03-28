@@ -1,0 +1,800 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Series Watchlist Progress Dashboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+
+    <style>
+        :root {
+            --bg: #0f0f10;
+            --card: #1c1c1e;
+            --text: #f2f2f7;
+            --muted: #9a9aa0;
+            --border: #2c2c2e;
+            --accent: #0a84ff;
+            --done-border: #860020;
+            --done-bg: rgba(214, 65, 67, 0.15);
+            --upcoming-border: #007d34;  
+            --upcoming-bg: rgba(10, 255, 132, 0.15);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: "Montserrat", -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+        }
+
+        header {
+            max-width: 900px;
+            margin: auto;
+            padding: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            background: var(--bg);
+            z-index: 100;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .brand {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            font-weight: 800;
+            font-size: 22px;
+        }
+
+        .add-btn {
+            width: 40px;
+            height: 40px;
+            background: var(--card);
+            border: 1px solid var(--border);
+            font-size: 22px;
+            cursor: pointer;
+            color: var(--text);
+        }
+
+         .add-btn:hover {
+            border: 1px solid var(--border);
+            background: rgba(100, 100, 100, 0.8);
+            color: var(--text);
+            transform: scale(1.05);
+           box-shadow: var(--shadow);
+        }
+
+
+        #filterBar {
+            font-family: "Montserrat", -apple-system, BlinkMacSystemFont, sans-serif;
+            max-width: 900px;
+            margin: auto;
+            padding: 8px 16px 16px;
+            display: flex;
+            gap: 10px;
+            position: sticky;
+            top: 64px;
+            background: var(--bg);
+            z-index: 99;
+            border-bottom: 1px solid var(--border);
+        }
+
+        #filterBar select,
+        #filterBar button {
+            padding: 8px 10px;
+            background: var(--card);
+            border: 1px solid var(--border);
+            color: var(--text);
+            cursor: pointer;
+            flex: 1;
+            font-family: inherit;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        #filterBar select:focus,
+        #filterBar button:hover {
+            box-shadow: 0 0 5px rgba(10, 132, 255, 0.3);
+            outline: none;
+        }
+
+        #filterBar button {
+            flex: 0.7;
+            font-weight: 600;
+            background: rgba(100, 100, 100, 0.4);
+            color: #fff;
+        }
+
+        #filterBar button:hover {
+            background: rgba(100, 100, 100, 0.8);
+        }
+
+        .container {
+            max-width: 900px;
+            margin: auto;
+            padding: 20px 16px 40px;
+        }
+
+        .series-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            margin-bottom: 16px;
+            cursor: grab;
+            transition: background 0.3s, border 0.3s;
+        }
+
+        .series-card.done {
+            border: 2px solid var(--done-border);
+            background-color: var(--done-bg);
+        }
+
+        .series-card.upcoming {
+            border: 2px solid var(--upcoming-border);
+            background-color: var(--upcoming-bg);
+        }
+
+        .series-card.dragging {
+            opacity: 0.5;
+            border: 2px dashed var(--accent);
+        }
+
+        .series-header {
+            display: flex;
+            gap: 12px;
+            padding: 12px;
+        }
+
+        .poster {
+            width: 100px;
+            height: 150px;
+            object-fit: cover;
+            background: #222;
+        }
+
+        .series-info {
+            display: flex;
+            flex-direction: column;
+            height: 150px;
+        }
+
+        .series-info strong {
+            font-size: 20px;
+            font-weight: 600;
+        }
+
+        .series-info small {
+            color: var(--muted);
+            font-size: 15px;
+        }
+
+        .network-logo {
+            height: 20px;
+            margin-top: 16px;
+            margin-bottom: 6px;
+            align-self: flex-start;
+            opacity: 0.8;
+        }
+
+        .edit-btn {
+            background: var(--glass);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--border);
+            color: var(--text);
+            cursor: pointer;
+            font-size: 14px;
+            padding: 10px;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            margin-left: 0;
+            margin-top: auto;
+        }
+
+        .edit-btn:hover {
+            background: dimgrey;
+            border-color: white;
+            color: white;
+            transform: scale(1.1);
+        }
+
+        .season {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 12px;
+            position: relative;
+            border-top: none;
+        }
+
+        .season::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 1.5%;
+            width: 97%;
+            height: 1px;
+            background: var(--border);
+        }
+
+        .season-label {
+            font-weight: 600;
+            color: var(--text);
+            min-width: 40px;
+            font-size: 15px;
+        }
+
+        .season input[type="number"] {
+            width: 48px;
+            padding: 4px;
+            color: var(--text);
+            font-size: 15px;
+            font-weight: 500;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .season input[type="number"]:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.1);
+            background: rgba(0, 122, 255, 0.15);
+        }
+
+        .progress {
+            flex: 1;
+            height: 5px;
+            background: var(--border);
+            overflow: hidden;
+        }
+
+        .fill {
+            height: 100%;
+            transition: width 0.3s;
+        }
+
+        .percent {
+            font-size: 14px;
+            color: darkgrey;
+        }
+
+        .modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, .65);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: 0.25s;
+            backdrop-filter: blur(6px);
+        }
+
+        .modal.show {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal-box {
+            background: var(--card);
+            border: 1px solid var(--border);
+            width: 420px;
+            max-width: 95%;
+            padding: 24px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, .6);
+        }
+
+        .modal-box h3 {
+            margin: 0 0 20px;
+            font-weight: 600;
+            font-size: 20px;
+        }
+
+        .modal-box input[type="text"],
+        .modal-box input[type="file"] {
+            width: 100%;
+            background: transparent;
+            border: none;
+            border-bottom: 1px solid var(--border);
+            padding: 8px 4px;
+            margin-bottom: 18px;
+            color: var(--text);
+            font-size: 15px;
+            outline: none;
+            transition: border 0.2s;
+        }
+
+        .modal-box input:focus {
+            border-bottom: 1px solid var(--accent);
+        }
+
+        #posterPreview {
+            width: 100px;
+            height: 150px;
+            object-fit: cover;
+            border: 1px solid var(--border);
+            margin-bottom: 16px;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .modal-actions button {
+            flex: 1;
+            padding: 10px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .btn-cancel {
+            border: 1px solid var(--border);
+            background: var(--card);
+            color: var(--text);
+        }
+
+        .btn-cancel:hover {
+            border: 1px solid var(--border);
+            background: rgba(100, 100, 100, 0.8);
+            color: var(--text);
+        }
+
+        .btn-save {
+            border: 1px solid var(--border);
+            background: var(--card);
+            color: var(--text);
+        }
+
+        .btn-save:hover {
+            border: 1px solid var(--border);
+            background: rgba(100, 100, 100, 0.8);
+            color: var(--text);
+        }
+
+        .btn-delete {
+            color: grey;
+            border: 2px solid var(--done-border);
+            background-color: var(--done-bg);
+        }
+
+        .btn-delete:hover {
+            background: darkred;
+            color: var(--text);
+        }
+
+        .checkbox-upcoming {
+          display: flex;
+          align-items: center;
+          cursor: pointer;
+          font-size: 14px;
+          position: relative;
+          gap: 10px;
+        }
+
+        /* Hide default checkbox */
+        .checkbox-upcoming input {
+          position: absolute;
+          opacity: 0;
+          cursor: pointer;
+        }
+
+        /* Custom box */
+        .checkmark {
+          width: 20px;
+          height: 20px;
+          background-color: #eee;
+          border: 2px solid #555;
+          border-radius: 0px;
+          transition: 0.3s;
+        }
+
+        /* On hover */
+        .checkbox-upcoming:hover .checkmark {
+          background-color: #ccc;
+        }
+
+        /* When checked */
+        .checkbox-upcoming input:checked + .checkmark {
+          background-color: #4CAF50;
+          border-color: #4CAF50;
+        }
+
+        /* Check icon */
+        .checkmark::after {
+          content: "";
+          position: absolute;
+          display: none;
+        }
+
+        .checkbox-upcoming input:checked + .checkmark::after {
+          display: block;
+        }
+
+        .checkbox-upcoming .checkmark::after {
+          left: 7px;
+          top: 3px;
+          width: 5px;
+          height: 10px;
+          border: solid white;
+          border-width: 0 2px 2px 0;
+          transform: rotate(45deg);
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <div class="brand">Series Watchlist Progress Dashboard</div>
+        <div style="display:flex; gap:8px;">
+    <button onclick="exportData()" class="add-btn">⤓</button>
+    <button onclick="document.getElementById('importFile').click()" class="add-btn">⤒</button>
+    <button onclick="openAdd()" class="add-btn">＋</button>
+</div>
+
+<input type="file" id="importFile" accept="application/json" style="display:none">
+    </header>
+
+    <div id="filterBar">
+        <select id="sortAlpha">
+            <option value="">Sort</option>
+            <option value="asc">A→Z</option>
+            <option value="desc">Z→A</option>
+        </select>
+        <select id="filterNetwork">
+            <option value="">Network</option>
+        </select>
+        <select id="filterStatus">
+            <option value="">Status</option>
+            <option value="done">Done</option>
+            <option value="inprogress">In Progress</option>
+            <option value="upcoming">Upcoming</option>
+        </select>
+        <button onclick="resetFilters()">Reset</button>
+    </div>
+
+    <div class="container" id="list"></div>
+
+    <div class="modal" id="modal">
+        <div class="modal-box">
+            <h3 id="modalTitle">Add Series</h3>
+            <input id="titleInput" type="text" placeholder="Series Title">
+            <input id="networkInput" type="text" placeholder="Network">
+            <input type="file" id="posterInput" accept="image/*">
+            <input id="episodesInput" type="text" placeholder="Episodes per season (e.g. 8,10,6)">
+            <img id="posterPreview" style="display:none">
+            <label class="checkbox-upcoming">
+                  <input type="checkbox" id="checkbox-upcoming">
+                  <span class="checkmark"></span>
+                  Renewed / Upcoming
+            </label>
+            <div class="modal-actions">
+                <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+                <button class="btn-delete" id="deleteBtn" onclick="deleteSeriesModal()">Delete</button>
+                <button class="btn-save" id="saveBtn" onclick="saveSeries()">Add</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    const networkLogos = {
+        "Netflix": "./images/networks/netflix.svg",
+        "Apple TV": "./images/networks/appletv.svg",
+        "HBO": "./images/networks/hbo.svg",
+        "Amazon Prime Video": "./images/networks/amazon-prime-video.png",
+        "FX": "./images/networks/fx.svg",
+        "MGM+": "./images/networks/mgm+.svg",
+        "Disney+": "./images/networks/DisneyPlus.svg",
+        "BBC": "./images/networks/bbc.svg",
+        "Hulu": "./images/networks/hulu.svg"
+
+    };
+
+    let data = JSON.parse(localStorage.getItem("tracker")) || [];
+    let editingIndex = null;
+
+    const sortSelect = document.getElementById("sortAlpha");
+    const networkSelect = document.getElementById("filterNetwork");
+    const statusSelect = document.getElementById("filterStatus");
+
+    function save() {
+        localStorage.setItem("tracker", JSON.stringify(data));
+    }
+
+    function populateNetworks() {
+        const selected = networkSelect.value;
+        const networks = [...new Set(data.map(s => s.network).filter(Boolean))];
+        networkSelect.innerHTML =
+            `<option value="">Network</option>` +
+            networks.map(n => `<option value="${n}">${n}</option>`).join('');
+        if (selected) networkSelect.value = selected;
+    }
+
+    function applyFilters() {
+        populateNetworks();
+        let filtered = [...data];
+
+        const network = networkSelect.value;
+        if (network) filtered = filtered.filter(s => s.network === network);
+
+        const status = statusSelect.value;
+        if (status === "done") filtered = filtered.filter(s => s.seasons.every(se => se.watched >= se.total));
+        if (status === "inprogress") filtered = filtered.filter(s => !s.seasons.every(se => se.watched >= se.total));
+        if (status === "upcoming") filtered = filtered.filter(s => s.upcoming);
+
+        const sort = sortSelect.value;
+        if (sort === "asc") filtered.sort((a, b) => a.title.localeCompare(b.title));
+        if (sort === "desc") filtered.sort((a, b) => b.title.localeCompare(a.title));
+
+        render(filtered);
+    }
+
+    function resetFilters() {
+        sortSelect.value = "";
+        statusSelect.value = "";
+        networkSelect.value = "";
+        applyFilters();
+    }
+
+    // DRAG & DROP HANDLERS
+    let draggedIndex = null;
+
+    function dragStart() {
+        draggedIndex = Number(this.dataset.index);
+        this.classList.add("dragging");
+    }
+
+    function dragOver(e) {
+        e.preventDefault();
+        const list = document.getElementById("list");
+        const afterElement = getDragAfterElement(list, e.clientY);
+        const dragging = document.querySelector(".dragging");
+        if (afterElement == null) list.appendChild(dragging);
+        else list.insertBefore(dragging, afterElement);
+    }
+
+    function drop(e) {
+        e.preventDefault();
+        const list = document.getElementById("list");
+        const cards = [...list.querySelectorAll(".series-card")];
+        data = cards.map(card => data[Number(card.dataset.index)]);
+        save();
+        applyFilters();
+    }
+
+    function dragEnd() {
+        this.classList.remove("dragging");
+    }
+
+    function getDragAfterElement(container, y) {
+        const draggableElements = [...container.querySelectorAll(".series-card:not(.dragging)")];
+        return draggableElements.reduce((closest, child) => {
+            const box = child.getBoundingClientRect();
+            const offset = y - box.top - box.height / 2;
+            if (offset < 0 && offset > closest.offset) return { offset: offset, element: child };
+            else return closest;
+        }, { offset: Number.NEGATIVE_INFINITY }).element;
+    }
+
+    function render(listData = null) {
+        const list = document.getElementById("list");
+        list.innerHTML = "";
+        const seriesToRender = listData || data;
+
+        seriesToRender.forEach((s, i) => {
+            const card = document.createElement("div");
+            card.className = "series-card";
+            card.setAttribute("draggable", true);
+            card.dataset.index = i;
+
+            // DONE styling
+            if (s.seasons.every(se => se.watched >= se.total)) card.classList.add("done");
+
+            // UPCOMING styling
+            if (s.upcoming) card.classList.add("upcoming");
+
+            card.innerHTML =
+                `<div class="series-header">
+                    ${s.poster ? `<img class="poster" src="${s.poster}">` : ""}
+                    <div class="series-info">
+                        <strong>${s.title}</strong>
+                        <small>${s.network}</small>
+                        ${networkLogos[s.network] ? `<img class="network-logo" src="${networkLogos[s.network]}" alt="${s.network}">` : ''}
+                        <button class="edit-btn" onclick="openEdit(${i})">✎</button>
+                    </div>
+                </div>`;
+
+            s.seasons.forEach((se, si) => {
+                const p = Math.round(se.watched / se.total * 100);
+                card.innerHTML +=
+                    `<div class="season">
+                        <span class="season-label">S0${si + 1}</span>
+                        <input type="number" value="${se.watched}" min="0" max="${se.total}" onchange="updateSeason(${i},${si},this.value)">
+                        / ${se.total}
+                        <div class="progress">
+                            <div class="fill" style="width:${p}%;background:hsl(${120 - 120 * (p / 100)},100%,30%)"></div>
+                        </div>
+                        <div class="percent">${p}%</div>
+                    </div>`;
+            });
+
+            card.addEventListener("dragstart", dragStart);
+            card.addEventListener("dragover", dragOver);
+            card.addEventListener("drop", drop);
+            card.addEventListener("dragend", dragEnd);
+
+            list.appendChild(card);
+        });
+    }
+
+    function updateSeason(i, si, val) {
+        data[i].seasons[si].watched = Number(val);
+        save();
+        applyFilters();
+    }
+
+    function openAdd() {
+        editingIndex = null;
+        document.getElementById("modalTitle").textContent = "Add Series";
+        document.getElementById("saveBtn").textContent = "Add";
+        document.getElementById("titleInput").value = "";
+        document.getElementById("networkInput").value = "";
+        document.getElementById("episodesInput").value = "";
+        document.getElementById("posterPreview").style.display = "none";
+        document.getElementById("deleteBtn").style.display = "none";
+        const checkboxWrapper = document.querySelector(".checkbox-upcoming");
+        checkboxWrapper.style.display = "none";
+        document.getElementById("checkbox-upcoming").checked = false;
+        document.getElementById("modal").classList.add("show");
+    }
+
+    function openEdit(i) {
+        editingIndex = i;
+        const s = data[i];
+        document.getElementById("modalTitle").textContent = "Edit Series";
+        document.getElementById("saveBtn").textContent = "Save";
+        document.getElementById("titleInput").value = s.title;
+        document.getElementById("networkInput").value = s.network;
+        document.getElementById("episodesInput").value = s.seasons.map(se => se.total).join(",");
+        if (s.poster) {
+            const p = document.getElementById("posterPreview");
+            p.src = s.poster;
+            p.style.display = "block";
+        }
+        const checkboxWrapper = document.querySelector(".checkbox-upcoming");
+        checkboxWrapper.style.display = "flex";
+        document.getElementById("checkbox-upcoming").checked = !!s.upcoming;
+        document.getElementById("deleteBtn").style.display = "block";
+        document.getElementById("modal").classList.add("show");
+    }
+
+    document.getElementById("posterInput").addEventListener("change", e => {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = ev => {
+                const p = document.getElementById("posterPreview");
+                p.src = ev.target.result;
+                p.style.display = "block";
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+
+    function saveSeries() {
+        const title = document.getElementById("titleInput").value;
+        const network = document.getElementById("networkInput").value;
+        const episodes = document.getElementById("episodesInput").value
+            .split(",")
+            .map(x => Number(x.trim()))
+            .filter(x => x > 0);
+        if (!episodes.length) return alert("Enter valid seasons");
+
+        const poster = document.getElementById("posterPreview").src || "";
+        const seasons = episodes.map((t, i) => {
+            let watched = 0;
+            if (editingIndex !== null && data[editingIndex].seasons[i]) {
+                watched = Math.min(data[editingIndex].seasons[i].watched, t);
+            }
+            return { watched, total: t };
+        });
+
+        const isUpcoming = document.getElementById("checkbox-upcoming").checked;
+
+        if (editingIndex === null) data.push({ title, network, poster, seasons, upcoming: isUpcoming });
+        else data[editingIndex] = { title, network, poster, seasons, upcoming: isUpcoming };
+
+        save();
+        applyFilters();
+        closeModal();
+    }
+
+    function deleteSeriesModal() {
+        if (editingIndex !== null && confirm("Delete this series?")) {
+            data.splice(editingIndex, 1);
+            save();
+            applyFilters();
+            closeModal();
+        }
+    }
+
+    function closeModal() {
+        document.getElementById("modal").classList.remove("show");
+    }
+
+    sortSelect.addEventListener("change", applyFilters);
+    networkSelect.addEventListener("change", applyFilters);
+    statusSelect.addEventListener("change", applyFilters);
+
+    applyFilters();
+
+// EXPORT DATA
+function exportData() {
+    if (!data.length) {
+        alert("No data to export.");
+        return;
+    }
+
+    const blob = new Blob(
+        [JSON.stringify(data, null, 2)],
+        { type: "application/json" }
+    );
+
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "series-tracker-backup.json";
+    a.click();
+    URL.revokeObjectURL(url);
+}
+
+// IMPORT DATA
+document.getElementById("importFile").addEventListener("change", function (e) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function (event) {
+        try {
+            const imported = JSON.parse(event.target.result);
+
+            if (!Array.isArray(imported)) {
+                alert("Invalid backup file.");
+                return;
+            }
+
+            if (confirm("This will replace your current data. Continue?")) {
+                data = imported;
+                save();
+                applyFilters();
+                alert("Data restored successfully!");
+            }
+
+        } catch {
+            alert("Error reading file.");
+        }
+    };
+
+    reader.readAsText(file);
+});
+</script>
+
+</body>
+
+</html>
