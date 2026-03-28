@@ -507,6 +507,17 @@
     };
 
     let data = JSON.parse(localStorage.getItem("tracker")) || [];
+
+    if (!data.length) {
+        fetch("series-tracker-backup.json") // make sure path is correct
+            .then(res => res.json())
+            .then(json => {
+                data = json;
+                save();
+                applyFilters();
+            })
+            .catch(err => console.error("Failed to load JSON:", err));
+    }
     let editingIndex = null;
 
     const sortSelect = document.getElementById("sortAlpha");
